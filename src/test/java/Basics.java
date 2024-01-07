@@ -1,5 +1,6 @@
 import io.restassured.RestAssured;
 import static io.restassured.RestAssured.*;
+import static  org.hamcrest.Matchers.*;
 
 
 public class Basics {
@@ -31,7 +32,10 @@ public class Basics {
                 //in post parameter we should  give the resource
                 .when().post("maps/api/place/add/json")
                 //Adding assertion for status code
-                .then().log().all().assertThat().statusCode(200);
-
+                .then().log().all().assertThat().statusCode(200)
+                //Validating the scope in response body is app
+                .body("scope",equalTo("APP"))
+                //Validating the server name in response header
+                .header("server","Apache/2.4.52 (Ubuntu)");
     }
 }
