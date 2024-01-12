@@ -1,6 +1,11 @@
 import io.restassured.RestAssured;
 import io.restassured.path.json.JsonPath;
 import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static io.restassured.RestAssured.*;
 import static  org.hamcrest.Matchers.*;
@@ -8,45 +13,42 @@ import static  org.hamcrest.Matchers.*;
 
 public class Basics {
 
-    public  static  void main(String[] args)
-    {
+    @Test
+    public static void BasicsOfRestAssured(){
         //Setting the base URI
-//        RestAssured.baseURI="https://rahulshettyacademy.com/";
-//        //Addding the query param , header and body
-//        //log().all() used to print the logs .This will log the req
-//        //Body accepts only json
-//        given().log().all().queryParam("key","qaclick123").header("Content-Type","application/json")
-//                .body("{\n" +
-//                        "  \"location\": {\n" +
-//                        "    \"lat\": -38.383494,\n" +
-//                        "    \"lng\": 33.427362\n" +
-//                        "  },\n" +
-//                        "  \"accuracy\": 50,\n" +
-//                        "  \"name\": \"Frontline house\",\n" +
-//                        "  \"phone_number\": \"(+91) 983 893 3937\",\n" +
-//                        "  \"address\": \"29, side layout, cohen 09\",\n" +
-//                        "  \"types\": [\n" +
-//                        "    \"shoe park\",\n" +
-//                        "    \"shop\"\n" +
-//                        "  ],\n" +
-//                        "  \"website\": \"https://rahulshettyacademy.com\",\n" +
-//                        "  \"language\": \"French-IN\"\n" +
-//                        "}\n")
-//                //in post parameter we should  give the resource
-//                .when().post("maps/api/place/add/json")
-//                //Adding assertion for status code
-//                .then().log().all().assertThat().statusCode(200)
-//                //Validating the scope in response body is app
-//                .body("scope",equalTo("APP"))
-//                //Validating the server name in response header
-//                .header("server","Apache/2.4.52 (Ubuntu)");
-//
-//        System.out.println("Testing the testingWithPayload method");
-//        testingWithPayload();
-//        learnExtractionAndJSONPath();
-        AddUpdateGetE2ETesting();
+        RestAssured.baseURI="https://rahulshettyacademy.com/";
+        //Addding the query param , header and body
+        //log().all() used to print the logs .This will log the req
+        //Body accepts only json
+        given().log().all().queryParam("key","qaclick123").header("Content-Type","application/json")
+                .body("{\n" +
+                        "  \"location\": {\n" +
+                        "    \"lat\": -38.383494,\n" +
+                        "    \"lng\": 33.427362\n" +
+                        "  },\n" +
+                        "  \"accuracy\": 50,\n" +
+                        "  \"name\": \"Frontline house\",\n" +
+                        "  \"phone_number\": \"(+91) 983 893 3937\",\n" +
+                        "  \"address\": \"29, side layout, cohen 09\",\n" +
+                        "  \"types\": [\n" +
+                        "    \"shoe park\",\n" +
+                        "    \"shop\"\n" +
+                        "  ],\n" +
+                        "  \"website\": \"https://rahulshettyacademy.com\",\n" +
+                        "  \"language\": \"French-IN\"\n" +
+                        "}\n")
+                //in post parameter we should  give the resource
+                .when().post("maps/api/place/add/json")
+                //Adding assertion for status code
+                .then().log().all().assertThat().statusCode(200)
+                //Validating the scope in response body is app
+                .body("scope",equalTo("APP"))
+                //Validating the server name in response header
+                .header("server","Apache/2.4.52 (Ubuntu)");
+
     }
 
+    @Test
     public static void testingWithPayload(){
         RestAssured.baseURI="https://rahulshettyacademy.com/";
         //Addding the query param , header and body
@@ -86,6 +88,7 @@ public class Basics {
 
     }
 
+    @Test
     public static void AddUpdateGetE2ETesting(){
         //Add Place
         RestAssured.baseURI="https://rahulshettyacademy.com/";
@@ -115,5 +118,17 @@ public class Basics {
         String actualAddress= actualGetResponse.getString("address");
         System.out.println("Actual Address="+actualAddress);
         Assert.assertEquals(actualAddress,newAddress);
+    }
+
+    @Test
+    public static  void loadJsonBodyFromExternalFile() throws IOException {
+
+        RestAssured.baseURI="https://rahulshettyacademy.com/";
+        given().log().all().queryParam("key","qaclick123").header("Content-Type","application/json")
+                .body(new String(Files.readAllBytes(Paths.get("src/test/Utilities/AddPlacePayload.json"))))
+         .when().post("maps/api/place/add/json")
+                //Adding assertion for status code
+                .then().log().all().assertThat().statusCode(200);
+
     }
 }
