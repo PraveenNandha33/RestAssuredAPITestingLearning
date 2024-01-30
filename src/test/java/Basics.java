@@ -131,4 +131,24 @@ public class Basics {
                 .then().log().all().assertThat().statusCode(200);
 
     }
+
+    @Test
+    public static  void learningOauth() {
+        //fetching the access token from authorization server
+        RestAssured.baseURI="https://rahulshettyacademy.com/oauthapi/";
+        String accessTokenResponse=given().log().all().formParam("client_id","692183103107-p0m7ent2hk7suguv4vq22hjcfhcr43pj.apps.googleusercontent.com")
+                .formParam("client_secret","erZOWM9g3UtwNRj340YYaK_W")
+                .formParam("grant_type","client_credentials")
+                .formParam("scope","trust").
+        when().post("oauth2/resourceOwner/token").then().log().all().extract().response().asString();
+        JsonPath js=new JsonPath(accessTokenResponse);
+        String accessToken=js.getString("access_token").toString();
+
+        //Making get request
+        String bookdetails=given().queryParam("access_token",accessToken).
+        when().log().all().get("getCourseDetails").
+        then().extract().response().asString();
+        System.out.println("Book details Response"+ bookdetails);
+
+    }
 }
