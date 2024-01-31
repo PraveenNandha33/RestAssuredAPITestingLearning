@@ -1,3 +1,7 @@
+import AddPlaceAPI_POJOClasses.AddPlace;
+import AddPlaceAPI_POJOClasses.Location;
+import GetCourseAPI_POJOclasses.GetCoursePOJO;
+import GetCourseAPI_POJOclasses.WebAutomation;
 import io.restassured.RestAssured;
 import io.restassured.path.json.JsonPath;
 import org.testng.Assert;
@@ -6,6 +10,9 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static io.restassured.RestAssured.*;
 import static  org.hamcrest.Matchers.*;
@@ -151,4 +158,63 @@ public class Basics {
         System.out.println("Book details Response"+ bookdetails);
 
     }
+
+    //Using POJO classes for deserialization
+    @Test
+    public static  void learningPOJOclasses() {
+        //fetching the access token from authorization server
+        RestAssured.baseURI="https://rahulshettyacademy.com/oauthapi/";
+        String accessTokenResponse=given().log().all().formParam("client_id","692183103107-p0m7ent2hk7suguv4vq22hjcfhcr43pj.apps.googleusercontent.com")
+                .formParam("client_secret","erZOWM9g3UtwNRj340YYaK_W")
+                .formParam("grant_type","client_credentials")
+                .formParam("scope","trust").
+                when().post("oauth2/resourceOwner/token").then().log().all().extract().response().asString();
+        JsonPath js=new JsonPath(accessTokenResponse);
+        String accessToken=js.getString("access_token").toString();
+
+        //Using GetcoursePOJO class object
+        GetCoursePOJO bookdetails=given().queryParam("access_token",accessToken).
+                when().log().all().get("getCourseDetails").
+                then().extract().response().as(GetCoursePOJO.class);
+        //Fetching the linkedin from response using pojo classes
+        System.out.println("Pojo output for linkedin "+bookdetails.getLinkedIn());
+        //Printing  the title of WebAutomationCourses
+        List<WebAutomation> webAutomationCourse=bookdetails.getCourses().getWebAutomation();
+        System.out.println("WebAutomation Course Titles and Price");
+        for(int i=0;i<webAutomationCourse.size();i++)
+        {
+            System.out.println(webAutomationCourse.get(i).getCourseTitle()+" Rs "+webAutomationCourse.get(i).getPrice());
+        }
+    }
+
+    //Serialization
+    @Test
+    public void AddPlace(){
+
+        RestAssured.baseURI="https://rahulshettyacademy.com/";
+        AddPlace addPlace=new AddPlace();
+        addPlace.setAccuracy(50);
+        addPlace.setAddress("29, side layout, cohen 09");
+        addPlace.setLanguage("French-IN");
+        addPlace.setName("Frontline house");
+        addPlace.setPhone_number("(+91) 983 893 3937");
+        addPlace.setWebsite("https://rahulshettyacademy.com");
+        addPlace.setTypes(Arrays.asList("shoe park","shop"));
+        Location location=new Location();
+        location.setLat(-38.383494);
+        location.setLng(33.427362);
+        addPlace.setLocation(location);
+
+        given().log().all().queryParam("key","qaclick123").header("Content-Type","application/json")
+                //Inside the body we are passing the object of the class
+                .body(addPlace)
+                .when().post("maps/api/place/add/json")
+                //Adding assertion for status code
+                .then().log().all().assertThat().statusCode(200)
+                //Validating the scope in response body is app
+                .body("scope",equalTo("APP"))
+                //Validating the server name in response header
+                .header("server","Apache/2.4.52 (Ubuntu)");
+    }
+
 }
