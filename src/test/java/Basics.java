@@ -3,7 +3,12 @@ import AddPlaceAPI_POJOClasses.Location;
 import GetCourseAPI_POJOclasses.GetCoursePOJO;
 import GetCourseAPI_POJOclasses.WebAutomation;
 import io.restassured.RestAssured;
+import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.builder.ResponseSpecBuilder;
 import io.restassured.path.json.JsonPath;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+import io.restassured.specification.ResponseSpecification;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -217,4 +222,19 @@ public class Basics {
                 .header("server","Apache/2.4.52 (Ubuntu)");
     }
 
+
+    //Req/Response Spec Builder
+    @Test
+    public void reqResSpecBuilder(){
+        //Giving requirements for Request specific  builder
+        RequestSpecification reqSpec=new RequestSpecBuilder().setBaseUri("https://rahulshettyacademy.com/").setContentType("application/json").addQueryParam("key","qaclick123").build();
+        //Giving requirements for Response specific  builder
+        ResponseSpecification resSpec=new ResponseSpecBuilder().expectStatusCode(200).expectContentType("application/json").expectBody("scope",equalTo("APP")).expectHeader("server","Apache/2.4.52 (Ubuntu)").build();
+        //Separating the given part and storing it  in request specifiation object
+        RequestSpecification request=given().spec(reqSpec).body(payload.addPlace());
+        //Using the response spec builder to assert the status code and storing it in response object
+        Response response=request.when().post("maps/api/place/add/json").then().spec(resSpec).extract().response();
+        System.out.println("Response "+response);
+
+    }
 }
