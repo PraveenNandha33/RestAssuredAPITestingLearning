@@ -1,10 +1,12 @@
 import AddPlaceAPI_POJOClasses.AddPlace;
 import AddPlaceAPI_POJOClasses.Location;
+import EcommerceAPIPOJOClasses.*;
 import GetCourseAPI_POJOclasses.GetCoursePOJO;
 import GetCourseAPI_POJOclasses.WebAutomation;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.builder.ResponseSpecBuilder;
+import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
@@ -12,6 +14,7 @@ import io.restassured.specification.ResponseSpecification;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -237,4 +240,65 @@ public class Basics {
         System.out.println("Response "+response);
 
     }
+
+    //EcommerceAPITesting
+     @Test
+    public void ecommerceAPITest(){
+
+        RequestSpecification eCommerceJsonReq= new RequestSpecBuilder().setBaseUri("https://rahulshettyacademy.com").setContentType(ContentType.JSON).build();
+        ResponseSpecification loginRes=new ResponseSpecBuilder().expectContentType(ContentType.JSON).expectStatusCode(200).expectBody("message",equalTo("Login Successfully")).build();
+         ECommerceLogin eCommerceLogin=new ECommerceLogin();
+         eCommerceLogin.setUserEmail("praveen334@gmail.com");
+         eCommerceLogin.setUserPassword("Stud@123");
+         ECommerceLoginResponse eCommerceLoginResponse =  given().log().all().spec(eCommerceJsonReq).body(eCommerceLogin).when().post("api/ecom/auth/login").then().assertThat().spec(loginRes).log().all().extract().response().as(ECommerceLoginResponse.class);
+
+        String authorizationToken= eCommerceLoginResponse.getToken();
+        String userId= eCommerceLoginResponse.getUserId();
+         System.out.println("authorizationToken"+authorizationToken+" userId"+userId);
+
+         //createProduct
+         RequestSpecification addProductReq= new RequestSpecBuilder().setBaseUri("https://rahulshettyacademy.com").addHeader("authorization",authorizationToken).build();
+
+       RequestSpecification prodSpecifications=  given().log().all().spec(addProductReq).
+                 param("productName","Qwerty").
+                 param("productAddedBy",userId).
+                 param("productCategory","Course").
+                 param("productSubCategory","Learning").
+                 param("productPrice","10000").
+               param("productDescription","Testing").
+                 param("productFor","Students").
+                 multiPart("productImage",new File("C:\\Users\\Praveennandha\\Pictures\\Screenshots\\Screenshot 2023-06-27 151921.png"));
+       ResponseSpecification addProdResponseSpec=new ResponseSpecBuilder().expectStatusCode(201).expectBody("message",equalTo("Product Added Successfully")).build();
+         String addProdResponse=prodSpecifications.when().post("api/ecom/product/add-product").then().log().all().spec(addProdResponseSpec).extract().response().asString();
+         JsonPath addProdJsonPath=new JsonPath(addProdResponse);
+         String productId=addProdJsonPath.getString("productId");
+         System.out.println(productId);
+
+         //Creating Orderfor TheProduct
+
+         OrderDetail orderDetail=new OrderDetail();
+         Orders orders=new Orders();
+         orderDetail.setCountry("India");
+         orderDetail.setProductOrderedId(productId);
+         List<OrderDetail> orderDetailsList=new ArrayList<>();
+         orderDetailsList.add(orderDetail);
+         orders.setOrders(orderDetailsList);
+         RequestSpecification creadOrderReqSpec= new RequestSpecBuilder().setBaseUri("https://rahulshettyacademy.com").setContentType(ContentType.JSON).addHeader("authorization",authorizationToken).build();
+         String orderResponse=given().log().all().spec(creadOrderReqSpec).body(orders)
+                 .when().log().all().post("api/ecom/order/create-order").then().assertThat().statusCode(201).extract().response().asString();
+         JsonPath  placeOrderJsonResponse=new JsonPath(orderResponse);
+          List<String> orderList=placeOrderJsonResponse.getList("orders");
+         //ViewOrders
+         given().log().all().spec(creadOrderReqSpec).queryParam("id",orderList.get(0)).when().log().all().get("api/ecom/order/get-orders-details").then().assertThat().statusCode(200).body("message",equalTo("Orders fetched for customer Successfully"));
+
+       //Deleting the product
+
+         given().log().all().spec(eCommerceJsonReq).pathParam("productId",productId).when().log().all().delete("api/ecom/product/delete-product/{productId}").then().assertThat().statusCode(200);
+
+
+
+
+
+     }
+
 }
